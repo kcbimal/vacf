@@ -1,0 +1,52 @@
+# ------------------------ INITIALIZATION ----------------------------
+units         metal
+dimension    3
+boundary    p    p    p
+atom_style    atomic
+
+# ----------------------- ATOM DEFINITION ----------------------------
+# Create simulation box
+
+lattice       bcc 3.304
+region        whole block 0 5 0 5 0 5
+create_box    1 whole
+
+# Create Ta atoms
+lattice       bcc 3.304
+create_atoms 1 region whole
+
+# -------------------- INTERATOMIC POTENTIAL -------------------------
+pair_style    eam/fs
+pair_coeff    * * Ta.eam.fs Ta
+############################ EQUILIBRATION ############################
+
+# Set timestep
+reset_timestep 0
+
+timestep 0.005              #(timestep = dt = pico second= 5fs)
+
+minimize 1e-6 1e-8 10 100000
+dump min all custom 10 ideal_Ta_3.304_300K.txt id x y z vx vy vz
+dump_modify min pbc yes sort id
+
+##################### MD ##########################
+reset_timestep     0
+
+# Set temperature
+velocity all create 300 12345 mom yes rot no
+
+reset_timestep     0
+
+compute 1 all property/atom x y z vx vy vz
+fix 3 all nvt temp 300.0 300.0 0.01    
+
+dump 4a all custom 10 dump.Ta_3.304_300K.* id type x y z vx vy vz
+dump_modify 4a pbc yes sort id
+
+# Run
+run     1000      #total run 1000*0.005 =5ps 
+ 
+
+######################################
+# SIMULATION DONE
+print "All done"
